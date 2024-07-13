@@ -16,6 +16,13 @@ def create_api_token(api_key: str, uid: str) -> str:
     return result['data']['token']
 
 
+def handle_stream_data(json: any, sb: list):
+    if 'status' in json and json['status'] == -1:
+        raise RuntimeError('请求异常：' + json['error'])
+    sb.append(json['text'])
+    print(json['text'], end='')
+
+
 def generate_outline(api_token: str, subject: str, prompt=None, data_url=None) -> str:
     url = BASE_URL + '/ppt/generateOutline'
     body = json.dumps({
@@ -24,7 +31,7 @@ def generate_outline(api_token: str, subject: str, prompt=None, data_url=None) -
         'dataUrl': data_url
     })
     sb = []
-    response = post_sse(url, { 'token': api_token }, body, lambda _json: (sb.append(_json['text']), print(_json['text'], end='')), True)
+    response = post_sse(url, { 'token': api_token }, body, lambda json: handle_stream_data(json, sb), True)
     if response.status_code != 200:
         raise RuntimeError('生成大纲失败，httpStatus=' + str(response.status_code))
     if response.headers['Content-Type'] in 'application/json':
@@ -41,7 +48,7 @@ def generate_content(api_token: str, outline: str, prompt=None, data_url=None) -
         'dataUrl': data_url
     })
     sb = []
-    response = post_sse(url, { 'token': api_token }, body, lambda _json: (sb.append(_json['text']), print(_json['text'], end='')), True)
+    response = post_sse(url, { 'token': api_token }, body, lambda json: handle_stream_data(json, sb), True)
     if response.status_code != 200:
         raise RuntimeError('生成大纲内容，httpStatus=' + str(response.status_code))
     if response.headers['Content-Type'] in 'application/json':

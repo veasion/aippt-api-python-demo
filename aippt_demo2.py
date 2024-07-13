@@ -16,6 +16,14 @@ def create_api_token(api_key: str, uid: str) -> str:
     return result['data']['token']
 
 
+def handle_stream_data(json: any, ppt_info: list):
+    if 'status' in json and json['status'] == -1:
+        raise RuntimeError('请求异常：' + json['error'])
+    if 'result' in json and json['status'] == 4:
+        ppt_info.append(json['result'])
+    print(json['text'], end='')
+
+
 def direct_generate_pptx(api_token: str, stream: bool, template_id: str, subject: str, pptx_property=False, prompt=None, data_url=None) -> any:
     url = BASE_URL + '/ppt/directGeneratePptx'
     body = json.dumps({
@@ -28,7 +36,7 @@ def direct_generate_pptx(api_token: str, stream: bool, template_id: str, subject
     })
     if stream:
         ppt_info = []
-        response = post_sse(url, { 'token': api_token }, body, lambda _json: (ppt_info.append(_json['result']) if _json['status'] == 4 and 'result' in _json else None, print(_json['text'], end='')), True)
+        response = post_sse(url, { 'token': api_token }, body, lambda json: handle_stream_data(json, ppt_info), True)
         if response.status_code != 200:
             raise RuntimeError('生成PPT，httpStatus=' + str(response.status_code))
         if response.headers['Content-Type'] in 'application/json':
