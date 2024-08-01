@@ -1,7 +1,7 @@
 import json
 from http_utils import *
 
-BASE_URL = 'https://chatmee.cn'
+BASE_URL = 'https://docmee.cn'
 
 
 def create_api_token(api_key: str, uid: str, limit: int|None) -> str:
