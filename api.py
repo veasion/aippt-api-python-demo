@@ -1,4 +1,4 @@
-import json
+import requests, json
 from http_utils import *
 
 BASE_URL = 'https://docmee.cn'
@@ -16,6 +16,29 @@ def create_api_token(api_key: str, uid: str, limit: int|None) -> str:
     return result['data']['token']
 
 
+def parse_file_data(api_token: str, file_path: str|None, content: str|None, file_url: str|None) -> str:
+    url = BASE_URL + '/api/ppt/parseFileData'
+    headers = { 'token': api_token }
+    data = None
+    files = None
+    if content or file_url:
+        data = {
+            'content': content,
+            'fileUrl': file_url
+        }
+    if file_path:
+        files = {
+            'file': (None, open(file_path, 'rb'))
+        }
+    response = requests.post(url, headers=headers, data=data, files=files)
+    if response.status_code != 200:
+        raise RuntimeError('解析文件或内容失败，httpStatus=' + str(response.status_code))
+    result = json.loads(response.text)
+    if result['code'] != 0:
+        raise RuntimeError('解析文件或内容异常：' + result['message'])
+    return result['data']['dataUrl']
+
+
 def handle_stream_data(json: any, sb: list):
     if 'status' in json and json['status'] == -1:
         raise RuntimeError('请求异常：' + json['error'])
@@ -23,7 +46,7 @@ def handle_stream_data(json: any, sb: list):
     print(json['text'], end='')
 
 
-def generate_outline(api_token: str, subject: str, prompt=None, data_url=None) -> str:
+def generate_outline(api_token: str, subject: str, data_url: str|None, prompt: str|None) -> str:
     url = BASE_URL + '/api/ppt/generateOutline'
     body = json.dumps({
         'subject': subject,
@@ -40,7 +63,7 @@ def generate_outline(api_token: str, subject: str, prompt=None, data_url=None) -
     return ''.join(sb)
 
 
-def generate_content(api_token: str, outline: str, prompt=None, data_url=None) -> str:
+def generate_content(api_token: str, outline: str, data_url: str|None, prompt: str|None) -> str:
     url = BASE_URL + '/api/ppt/generateContent'
     body = json.dumps({
         'outlineMarkdown': outline,
@@ -105,7 +128,7 @@ def handle_direct_stream_data(json: any, ppt_info: list):
     print(json['text'], end='')
 
 
-def direct_generate_pptx(api_token: str, stream: bool, template_id: str, subject: str, pptx_property=False, prompt=None, data_url=None) -> any:
+def direct_generate_pptx(api_token: str, stream: bool, template_id: str, subject: str, prompt: str|None, data_url: str|None, pptx_property=False) -> any:
     url = BASE_URL + '/api/ppt/directGeneratePptx'
     body = json.dumps({
         'stream': stream,
