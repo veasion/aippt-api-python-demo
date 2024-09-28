@@ -28,7 +28,7 @@ def parse_file_data(api_token: str, file_path: str|None, content: str|None, file
         }
     if file_path:
         files = {
-            'file': (None, open(file_path, 'rb'))
+            'file': open(file_path, 'rb')
         }
     response = requests.post(url, headers=headers, data=data, files=files)
     if response.status_code != 200:
