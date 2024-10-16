@@ -32,7 +32,7 @@ if __name__ == '__main__':
     print("\n\n==============")
     print(f"pptId: {ppt_id}")
     print(f"ppt主题: {ppt_info['subject']}")
-    print(f"ppt封面: {ppt_info['coverUrl']}?token={api_token}")
+    print(f"ppt封面: {ppt_info['coverUrl']}")
     print(f"ppt链接: {file_url}")
     
     # 下载PPT
