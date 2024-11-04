@@ -80,6 +80,34 @@ def generate_content(api_token: str, outline: str, data_url: str|None, prompt: s
     return ''.join(sb)
 
 
+def async_generate_content(api_token: str, outline: str, data_url: str|None, templateId: str|None, prompt: str|None) -> object:
+    url = BASE_URL + '/api/ppt/generateContent'
+    body = json.dumps({
+        'asyncGenPptx': True,
+        'templateId': templateId,
+        'outlineMarkdown': outline,
+        'prompt': prompt,
+        'dataUrl': data_url
+    })
+    pptInfo = { 'pptId': None, 'texts': [] }
+    response = post_sse(url, { 'token': api_token }, body, lambda json: handle_async_stream_content(json, pptInfo), True)
+    if response.status_code != 200:
+        raise RuntimeError('生成大纲内容，httpStatus=' + str(response.status_code))
+    if response.headers['Content-Type'] in 'application/json':
+        result = json.loads(response.text)
+        raise RuntimeError('生成大纲内容异常：' + result['message'])
+    return { 'id': pptInfo['pptId'], 'markdown': ''.join(pptInfo['texts']) }
+
+
+def handle_async_stream_content(json: any, pptInfo):
+    if 'status' in json and json['status'] == -1:
+        raise RuntimeError('请求异常：' + json['error'])
+    if 'pptId' in json and json['pptId']:
+        pptInfo['pptId'] = json['pptId']
+    pptInfo['texts'].append(json['text'])
+    print(json['text'], end='')
+
+
 def random_one_template_id(api_token: str) -> str:
     url = BASE_URL + '/api/ppt/randomTemplates'
     body = json.dumps({ 'size': 1, 'filters': { 'type': 1 } })
@@ -108,7 +136,7 @@ def generate_pptx(api_token: str, template_id: str, markdown: str, pptx_property
     return result['data']['pptInfo']
 
 
-def download_pptx(api_token: str, id: str) -> str:
+def download_pptx(api_token: str, id: str) -> object:
     url = BASE_URL + '/api/ppt/downloadPptx'
     body = json.dumps({ 'id': id })
     response = post_json(url, { 'token': api_token }, body)
@@ -117,7 +145,7 @@ def download_pptx(api_token: str, id: str) -> str:
     result = json.loads(response.text)
     if result['code'] != 0:
         raise RuntimeError('下载PPT异常：' + result['message'])
-    return result['data']['fileUrl']
+    return result['data']
 
 
 def handle_direct_stream_data(json: any, ppt_info: list):

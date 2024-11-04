@@ -3,7 +3,7 @@ from api import *
 
 
 if __name__ == '__main__':
-    # 流式生成 PPT
+    # 同步流式生成 PPT
     
     # 官网 https://docmee.cn
     # 开放平台 https://docmee.cn/open-platform/api
@@ -21,11 +21,11 @@ if __name__ == '__main__':
     
     # 生成大纲
     print('\n\n========== 正在生成大纲 ==========')
-    outline = generate_outline(api_token, subject)
+    outline = generate_outline(api_token, subject, None, None)
     
     # 生成大纲内容
     print('\n\n========== 正在生成大纲内容 ==========')
-    markdown = generate_content(api_token, outline)
+    markdown = generate_content(api_token, outline, None, None)
     
     # 随机一个模板
     print('\n\n========== 随机选择模板 ==========')
@@ -43,7 +43,8 @@ if __name__ == '__main__':
     
     # 下载PPT
     print('\n\n========== 正在下载PPT ==========')
-    url = download_pptx(api_token, ppt_id)
+    pptInfo = download_pptx(api_token, ppt_id)
+    url = pptInfo['fileUrl']
     save_path = os.getcwd() + f'/{ppt_id}.pptx'
     print(f'ppt链接: {url}')
     download(url, save_path)
